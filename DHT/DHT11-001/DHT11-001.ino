@@ -24,4 +24,3 @@ void loop()
   Serial.println("C ");   
   delay(500);            //每1000ms更新一次   
 }  
-
