@@ -1,5 +1,3 @@
-#include <Arduino.h>
-
 boolean isDebug = false;
 
 const int LED_Segs[6] = { 11, 10, 9, 6, 5, 3 };
@@ -27,7 +25,7 @@ void LightOn();
 void LightOut();
 void LightBrighting();
 
-void setup()
+void setup() 
 {
   Serial.begin(9600);
   pinMode(pinBtn, INPUT);
@@ -37,7 +35,7 @@ void setup()
   }
 }
 
-void loop()
+void loop() 
 {
   int press_time = readButton();
 
@@ -80,7 +78,7 @@ SystemEvent readButton()
     } else if ((SysState != Close) && (press_time >= CloseDuration) && (press_time < OpenDuration))
       SysState = Close;
   }
-
+  
   return SysState;
 }
 
@@ -108,7 +106,7 @@ void LightBrighting()
 {
   if (brightness <= min_brightness || brightness >= max_brightness) {
     fadeAmount = -fadeAmount ;
-  }
+  }   
   brightness += fadeAmount;
   if (isDebug) Serial.println(brightness);
 
@@ -117,3 +115,6 @@ void LightBrighting()
   }
   delay(BrightDelay);
 }
+
+
+
