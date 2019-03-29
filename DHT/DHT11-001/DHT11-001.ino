@@ -1,5 +1,3 @@
-#include <dht.h>
-
 #include <dht.h>   
 #define dht_dpin 2 //定義訊號要從Pin A0 進來  
   

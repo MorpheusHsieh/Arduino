@@ -9,7 +9,7 @@
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // 設定 LCD I2C 位址
 
 void setup() {
-  Serial.begin(115200);  // 用於手動輸入文字
+  Serial.begin(9600);  // 用於手動輸入文字
   lcd.begin(16, 2);      // 初始化 LCD，一行 16 的字元，共 2 行，預設開啟背光
 
   // 閃爍三次
