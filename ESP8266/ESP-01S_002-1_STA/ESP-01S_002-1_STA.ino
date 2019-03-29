@@ -46,7 +46,7 @@ void initESP() {
   sendATcmd("AT+RST\r\n",      5000);
   sendATcmd("AT+CWMODE=1\r\n", 2000);
   sendATcmd("AT+CWMODE?\r\n",  1000);
-  sendATcmd("AT+CWJAP=\"DADA9631\",\"22453975\"\r\n", 5000);
+  sendATcmd("AT+CWJAP=\"ESP8266\",\"1234test\"\r\n", 5000);
   sendATcmd("AT+CIFSR\r\n",    1000);
 }
 

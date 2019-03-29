@@ -3,11 +3,7 @@
 #include <SoftwareSerial.h>
 #include <Wire.h>
 
-
 #define BAUD      9600
-
-#define WIFI_SSID "DADA9631"
-#define WIFI_PSWD "22453975"
 
 // 設定 LCD I2C 位址
 LiquidCrystal_I2C LCD1602(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);

@@ -11,8 +11,8 @@
 #define PRINT_WiFi_SERIAL   true
 #define PRINT_WiFi_LCD      true
 
-#define WIFI_SSID "DADA9631"
-#define WIFI_PSWD "22453975"
+#define LCD_DURATION        500
+unsigned long CurrentTimestamp = millis() - LCD_DURATION;
 
 // 設定 LCD I2C 位址
 LiquidCrystal_I2C LCD1602(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
@@ -35,13 +35,13 @@ void setup()
   mesg = "Arduino...Ok";
   Serial.begin(BAUD_SERIAL);
   Serial.println(mesg);
-  LCD1602.setCursor(0, 0); LCD1602.print(mesg);
+  LCD1602.clear(); LCD1602.print(mesg);
   delay(1000);
 
-  mesg = "DHT Sensor...Ok";
+  mesg = "DHT...Ok";
   DHT_SENSOR.begin(); 
-  Serial.println("mesg");
-  LCD1602.setCursor(0, 0); LCD1602.print(mesg);
+  Serial.println(mesg);
+  LCD1602.clear(); LCD1602.print(mesg);
   delay(1000);
 
   wifi_setting();
@@ -49,29 +49,36 @@ void setup()
 
 void loop() 
 {
-  float h = DHT_SENSOR.readHumidity();
-  float t = DHT_SENSOR.readTemperature();
-  if (PRINT_DHT_SERIAL) printMonitor(h, t);
-  if (PRINT_DHT_LCD)    printLCD(h, t);
-  delay(1000);
+  if (millis() >= CurrentTimestamp + LCD_DURATION)
+  {
+    CurrentTimestamp = millis();
+    float h = DHT_SENSOR.readHumidity();
+    float t = DHT_SENSOR.readTemperature();
+    if (PRINT_DHT_SERIAL) printMonitor(h, t);
+    if (PRINT_DHT_LCD)    printLCD(h, t);
+  }
 
-  
-//  // send AT command to ESP8266-01 form console (serial)
-//  if ( Serial.available() ) {
-//    ESP8266.write( Serial.read() );
+  // send AT command to ESP8266-01 form console (serial)
+  if (Serial.available()) {
+    ESP8266.write(Serial.read());
+  }
+
+//  if (ESP8266.available()) {
+//    Serial.write(ESP8266.read());
 //  }
-//  if ( ESP8266.available() ) { // receive message from ESP8266-01
-//    if ( ESP8266.find("+IPD,") ) { // detect the client's request
-//      String msg="";
-//      byte connID = ESP8266.read()-48; // client's connection ID
-//      while( ESP8266.available() ) { // collect client's request from the web browser
-//        msg += (char)ESP8266.read();
-//        delay(20); // the delay will let the message become more stable
-//      }
-//      sendHTML(connID,msg.c_str()); // send HTML message to client
-//      Serial.flush();
-//    }
-//  }
+
+  if ( ESP8266.available() ) {              // receive message from ESP8266-01
+    if ( ESP8266.find("+IPD,") ) {          // detect the client's request
+      String msg = "";
+      byte connID = ESP8266.read() - 48;    // client's connection ID
+      while( ESP8266.available() ) {        // collect client's request from the web browser
+        msg += (char)ESP8266.read();
+        delay(20);                          // the delay will let the message become more stable
+      }
+      sendHTML(connID, msg.c_str());        // send HTML message to client
+      Serial.flush();
+    }
+  }
 }
 
 void lcd_setting()
@@ -81,10 +88,8 @@ void lcd_setting()
 
   // 閃爍三次
   for(int i = 0; i < 3; i++) {
-    LCD1602.backlight(); // 開啟背光
-    delay(250);
-    LCD1602.noBacklight(); // 關閉背光
-    delay(250);
+    LCD1602.backlight();   delay(250);    // 開啟背光
+    LCD1602.noBacklight(); delay(250);    // 關閉背光
   }
   LCD1602.backlight();
 
@@ -96,18 +101,18 @@ void lcd_setting()
 
 void wifi_setting() 
 {
-  Serial.println("\nESP8266 setup start ...");
+  Serial.println("\nESP8266 setup start...");
 
   ESP8266.begin(BAUD_ESP8266);
+  sendATcmd("AT+RST\r\n",            3000);
   sendATcmd("AT+GMR\r\n",            1000);
-  sendATcmd("AT+RST\r\n",            5000);
-  sendATcmd("AT+CWMODE=2\r\n",       2000);
+  sendATcmd("AT+CWMODE=2\r\n",       1000);
   sendATcmd("AT+CWMODE?\r\n",        1000);
   sendATcmd("AT+CIPMUX=1\r\n",       1000);
   sendATcmd("AT+CIPSERVER=1,80\r\n", 3000);
   sendATcmd("AT+CIFSR\r\n",          1000);
 
-  Serial.println("\r\nESP8266 setup finished ...");
+  Serial.println("\r\nServer styarted at port 80...");
   delay(1000);
 }
 
@@ -142,7 +147,15 @@ void sendATcmd(char *cmd, unsigned int delay)
     char ch = ESP8266.read();
     response += ch;
   };
-  if (PRINT_WiFi_SERIAL) Serial.print(response);
+  response.trim();
+  
+  int len = response.length();
+  if (response.substring(len-2, len) != "\r\n") {
+    response += "\r\n";
+  }
+  if (PRINT_WiFi_SERIAL) { 
+    Serial.print(response); 
+  }
 
   if (PRINT_WiFi_LCD) {
     String cmdstr((char*)cmd);
@@ -151,7 +164,7 @@ void sendATcmd(char *cmd, unsigned int delay)
     String result = response;
     result.replace(cmdstr, "");
     result.replace("OK", "");
-    result.substring(0, 16);
+    result = result.substring(0,16);
     result.trim();
     if (result.length() == 0) result = "OK";
     // Serial.println("\r\nResult: '" + result + "'");
@@ -175,11 +188,11 @@ void sendHTML(byte connID,char* msg)
   // Read temperature as Celsius (the default)
   float t = DHT_SENSOR.readTemperature(); 
    
-  html += "<html>";
-  html += "<head>";
-  html += "  <meta http-equiv=\"refresh\" content=\"10\">";
-  html += "  <title>From ESP8266-01</title>";
-  html += "</head>";
+  html += "<html>\n\r";
+  html += "<head>\n\r";
+  html += "  <meta http-equiv=\"refresh\" content=\"10\">\n\r";
+  html += "  <title>From ESP8266-01</title>\n\r";
+  html += "</head>\n\r";
   html += "<body>\n\r";
   html += "  <p>ClientMsg: "; html += msg; html += "</p>\n\r";
   html += "  <p>Humi: "; html += h; html += "%</p>\n\r";
