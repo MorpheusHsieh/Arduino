@@ -209,7 +209,7 @@ void loop()
         msg += (char)ESP8266.read();
         delay(20);                          // the delay will let the message become more stable
       }
-      Serial.print("\r\nmsg: '"); Serial.print(msg); Serial.print("'");
+      Serial.print(msg);
       sendHTML(connID, msg.c_str());        // send HTML message to client
       Serial.flush();
     }

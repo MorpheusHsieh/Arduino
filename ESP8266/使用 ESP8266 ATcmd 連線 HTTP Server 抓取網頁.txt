@@ -1,0 +1,215 @@
+使用 ESP-01S ATcmd 連線 HTTP Server 抓取網頁
+
+
+1.使用 RealTerm 連線 ESP-01S
+
+  (1).Display -> Ansi
+  
+  (2).Port -> Baud -> [ESP-01S baud rate]
+  
+      Port -> [ESP-01S COM port]
+      
+  (3) Change
+ 
+ 
+2.在 Send 頁面執行 AT command
+
+  (1).勾選 EOL 中的 +CR, +LF, +CR, +LF 四個選項
+  
+  (2).測試 AT 命令是否可正常執行
+  
+      AT  
+      
+      OK  
+      
+  (3).取得韌體版本：
+
+      AT+GMR        
+      AT version:1.2.0.0(Jul  1 2016 20:04:45)
+      SDK version:1.5.4.1(39cb9a32) 
+      Ai-Thinker Technology Co. Ltd.
+      v1.5.4.1-a Nov 30 2017 15:54:29
+      OK 
+      
+  (4).ESP-01S 重新啟動
+  
+      AT+RST
+
+
+      OK
+      WIFI DISCONNECT
+      
+      ets Jan  8 2013,rst cause:2, boot mode:(3,7)
+      
+      load 0x40100000, len 1856, room 16 
+      tail 0
+      chksum 0x63
+      load 0x3ffe8000, len 776, room 8 
+      tail 0
+      chksum 0x02
+      load 0x3ffe8310, len 552, room 8 
+      tail 0
+      chksum 0x79
+      csum 0x79
+      
+      2nd boot version : 1.5
+        SPI Speed      : 40MHz
+        SPI Mode       : DIO
+        SPI Flash Size & Map: 8Mbit(512KB+512KB)
+      jump to run user1 @ 1000
+      
+      斕???{鏤o<??{l{爐?d`斕r?駤?l`s? ?ll`{l?{l??cl攘s|8`?駥l{c檞o?gn??d?l??????lo??蓌cd鞁p?蓌cd8{lsd
+      Ai-Thinker Technology Co. Ltd.
+      
+      ready
+      WIFI CONNECTED
+      WIFI GOT IP
+
+  
+  (5).查詢目前工作模式：
+      
+      ESP-01S有三種工作模式，分別是：
+      1 -> Station (STA) 網卡模式
+      2 -> Access Point (AP) 基地台模式
+      3 -> BOTH (AP + STA).
+      
+      注意, 執行 CWMODE 指令指定工作模式後，最好立即執行 CWRST 重啟, 以確認設定生效。
+      
+      AT+CWMODE?
+      +CWMODE:1
+      
+      OK   
+
+  (6).設定工作模式：
+  
+      AT+CWMODE=1
+
+      OK  
+
+  (7).查詢IP：
+  
+      AT+CIFSR
+      +CIFSR:STAIP,"192.168.4.2"
+      +CIFSR:STAMAC,"dc:4f:22:26:25:f0"
+
+      OK
+
+      從上述訊息可知此模組已經被指派 "192.168.4.2" 的 IP 了。
+      
+  (8).列出鄰近基地台清單：
+  
+      AT+CWLAP
+    
+      +CWLAP:(3,"My ASUS KNL",-72,"4c:ed:fb:72:82:ac",1,11,0)
+      +CWLAP:(4,"Salvia-officinalis",-83,"6c:72:20:0d:a2:a8",1,-22,0)
+      +CWLAP:(4,"wifi962",-82,"1c:5f:2b:8a:e5:26",1,0,0)
+      +CWLAP:(4,"wyuwen",-85,"64:77:7d:fd:d7:b8",1,-4,0)
+      +CWLAP:(3,"kumano",-88,"d0:17:c2:64:ef:1c",1,8,0)
+      +CWLAP:(4,"DADA9631",-34,"e4:35:c8:21:e8:24",11,-7,0)
+      +CWLAP:(0,"HP-Print-92-LaserJet 1102",-58,"c4:8e:8f:54:93:92",11,-21,0)
+      +CWLAP:(3,"ESP8266",-37,"5e:cf:7f:fd:21:ce",11,-4,0)
+      +CWLAP:(4,"Onedao",-54,"34:ce:00:35:7a:1b",6,13,0)
+      +CWLAP:(3,"BB Home 6N5F",-78,"00:fc:8d:f8:67:e8",7,-12,0)
+      +CWLAP:(4,"roger",-88,"00:22:2d:5e:79:2c",9,-19,0)
+      +CWLAP:(3,"roger_2EX",-89,"74:da:38:e3:e1:3f",9,-2,0)
+      +CWLAP:(3,"roger",-88,"74:da:3c:e3:e1:40",9,0,0)
+    
+      OK
+      
+  (9).連線指定之基地台：
+  
+      AT+CWJAP="[SSID]","1234test"
+      WIFI CONNECTED
+      WIFI GOT IP
+      
+      OK  
+      
+  (10).查詢連線到哪一個基地台：
+  
+      AT+CWJAP?
+      +CWJAP:"ESP8266","5e:cf:7f:fd:21:ce",11,-42
+      
+      OK 
+  
+  (11).建立 TCP/IP 連線：
+  
+       AT+CIPSTART="TCP","192.168.4.1",80
+      CONNECT
+      
+      OK
+
+  (12).查詢目前 TCP/IP 連線狀態：
+  
+      AT+CIPSTATUS
+      STATUS:3
+      +CIPSTATUS:0,"TCP","192.168.4.1",80,35250,0
+      OK 
+
+  (13).使用 GET 指令取得 HTTP Server 的訊息：
+  
+      此部分指令分為兩部分：
+      
+      A.告訴伺服器要傳送的指令有幾個位元：
+      
+        AT+CIPSEND=7
+      
+      B.在 '>' 符號出現後，輸入 GET 指令：
+      
+        GET /
+        
+        傳送的的資料有 5個位元，再加上 '\r\n' 剛好是 7個位元。
+        
+        將會收到從 HTTP Server 回傳的資料。
+        
+      執行過程如下：
+      
+        AT+CIPSTART="TCP","192.168.4.1",80
+        
+        CONNECT
+        
+        OK
+        AT+CIPSEND=7
+        
+        
+        OK
+        > 
+        Recv 7 bytes
+        
+        SEND OK
+        
+        +IPD,211:<html><head>
+        <meta http-equiv="refresh" content="10">
+        <title>From ESP-01</title>
+        </head><body>
+        <p>ClientMsg: ,7:GET /
+        </p>
+        <p>Humidity: 53.00%</p>
+        <p>Temperature: 21.00*C</p>
+        </body>
+        </html>
+        CLOSED
+      
+      PS: 我已事先在伺服器建立了一個溫濕度感測的網頁，
+      
+          所以回傳回來的資訊就是網頁內容。
+  
+  (14).關閉 TCP/IP 連線：
+  
+      AT+CIPCLOSE
+
+      ERROR
+
+      這是因為只有在 TCP/UDP CONNECTING 或 CONNECT OK 狀態下，
+      
+      才會關閉連線，否則會認為關閉失敗傳回 ERROR。
+      
+      
+  (15).離開目前連線的基地台：
+  
+      AT+CWQAP
+
+      OK
+      WIFI DISCONNECT
+
+      
+  
