@@ -112,6 +112,7 @@ void printLCD(float h, float t)
 void sendATcmd(char *cmd, unsigned int delay)
 {
   ESP8266.print(cmd);
+  Serial.print((char*)cmd);
   unsigned long timeout = millis() + delay;
   while(millis() < timeout ) {} // NOP
 
@@ -126,9 +127,11 @@ void sendATcmd(char *cmd, unsigned int delay)
   if (response.substring(len-2, len) != "\r\n") {
     response += "\r\n";
   }
-  if (PRINT_WiFi_SERIAL) { 
-    Serial.print(response); 
-  }
+
+  Serial.print(response);
+//  if (PRINT_WiFi_SERIAL) { 
+//    Serial.print(response); 
+//  }
 
   if (PRINT_WiFi_LCD) {
     String cmdstr((char*)cmd);
@@ -161,16 +164,16 @@ void sendHTML(byte connID,char* msg)
   float t = DHT_SENSOR.readTemperature(); 
    
   String html = "";
-  html += "<html><head>\n\r";
-  html += "  <meta http-equiv=\"refresh\" content=\"10\">\n\r";
+  html += "<html><head>";
+  html += "  <meta http-equiv=\"refresh\" content=\"10\">";
   html += "  <title>From ESP-01</title>\n\r";
-  html += "</head>";
-  html += "<body>\n\r";
+  html += "</head>\n\r";
+  html += "<body>";
   html += "  <p>ClientMsg: ";   html += msg; html += "</p>\n\r";
   html += "  <p>Humidity: ";    html += h;   html += "%</p>\n\r";
   html += "  <p>Temperature: "; html += t;   html += "*C</p>\n\r";
-  html += "</body>\n\r";
-  html += "</html>\n\r";
+  html += "</body>";
+  html += "</html>";
 
   Serial.println(html);
   sprintf(cipSend,"AT+CIPSEND=%d,%d\r\n",connID,html.length());
