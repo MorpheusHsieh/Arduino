@@ -73,20 +73,25 @@ void wifi_setting()
   Serial.println("\nESP8266 setup start...");
 
   ESP8266.begin(BAUD_ESP8266);
-  // sendATcmd("AT+GMR\r\n",   1000);
+  sendATcmd("AT+GMR\r\n",   1000);
+  
   sendATcmd("AT+RST\r\n",      5000);
-  sendATcmd("AT+CWMODE=2\r\n", 2000);
+  
+  sendATcmd("AT+CWMODE=3\r\n", 2000);
   sendATcmd("AT+CWMODE?\r\n",  1000);
   
   char* cmd = "AT+CWSAP=\""AP_SSID"\",\""AP_PSWD"\",11,3\r\n";
-  Serial.print((char*)cmd);
-  sendATcmd(cmd, 1000);
+  sendATcmd(cmd, 2000);
 
-  sendATcmd("AT+CWLAP\r\n", 1000); // Station mode only
+  sendATcmd("AT+CWLAP\r\n", 3000); // Station mode only
   sendATcmd("AT+CIFSR\r\n", 1000);
-  sendATcmd("AT+CIPMUX=1\r\n",   2000);
-  sendATcmd("AT+CIPSERVER=\r\n", 1000);
+  
+  sendATcmd("AT+CIPMUX=1\r\n", 2000);
+  sendATcmd("AT+CIPMUX?\r\n",  1000);
+
   sendATcmd("AT+CIPSERVER=1,80\r\n", 2000);
+  sendATcmd("AT+CIPSTATUS=?\r\n",    1000);
+  
   Serial.println("\r\nServer styarted at port 80...");
 }
 
@@ -217,7 +222,7 @@ void loop()
         msg += (char)ESP8266.read();
         delay(20);                          // the delay will let the message become more stable
       }
-      Serial.print("\r\n"+msg);
+      Serial.print("\r\n"); Serial.print(msg);
       sendHTML(connID, msg.c_str());        // send HTML message to client
       Serial.flush();
     }
