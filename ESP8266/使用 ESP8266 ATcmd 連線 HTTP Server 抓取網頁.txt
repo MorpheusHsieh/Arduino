@@ -118,7 +118,7 @@
       
   (9).連線指定之基地台：
   
-      AT+CWJAP="[SSID]","1234test"
+      AT+CWJAP="[SSID]","[password]"
       WIFI CONNECTED
       WIFI GOT IP
       
@@ -133,7 +133,7 @@
   
   (11).建立 TCP/IP 連線：
   
-       AT+CIPSTART="TCP","192.168.4.1",80
+      AT+CIPSTART="TCP","192.168.4.1",80
       CONNECT
       
       OK

@@ -24,8 +24,8 @@ LiquidCrystal_I2C LCD1602(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 #define DHTTYPE   DHT11
 DHT DHT_SENSOR(PIN_DHT, DHTTYPE);
 
-#define PIN_RX    3     // D3 -> ESP TX, 
 #define PIN_TX    2     // D2 -> ESP RX, 
+#define PIN_RX    3     // D3 -> ESP TX, 
 SoftwareSerial ESP8266(PIN_RX, PIN_TX);
 
 void setup() 
@@ -73,19 +73,20 @@ void wifi_setting()
   Serial.println("\nESP8266 setup start...");
 
   ESP8266.begin(BAUD_ESP8266);
-  // sendATcmd("AT+GMR\r\n", 1000);
-  sendATcmd("AT+RST\r\n", 3000);
-  sendATcmd("AT+CWMODE=2\r\n", 1000);
-  // sendATcmd("AT+CWMODE?\r\n", 1000);
+  // sendATcmd("AT+GMR\r\n",   1000);
+  sendATcmd("AT+RST\r\n",      5000);
+  sendATcmd("AT+CWMODE=2\r\n", 2000);
+  sendATcmd("AT+CWMODE?\r\n",  1000);
   
   char* cmd = "AT+CWSAP=\""AP_SSID"\",\""AP_PSWD"\",11,3\r\n";
   Serial.print((char*)cmd);
   sendATcmd(cmd, 1000);
 
-  sendATcmd("AT+CWLAP\r\n", 1000);
+  sendATcmd("AT+CWLAP\r\n", 1000); // Station mode only
   sendATcmd("AT+CIFSR\r\n", 1000);
-  sendATcmd("AT+CIPMUX=1\r\n", 1000);
-  sendATcmd("AT+CIPSERVER=1,80\r\n", 1000);
+  sendATcmd("AT+CIPMUX=1\r\n",   2000);
+  sendATcmd("AT+CIPSERVER=\r\n", 1000);
+  sendATcmd("AT+CIPSERVER=1,80\r\n", 2000);
   Serial.println("\r\nServer styarted at port 80...");
 }
 
@@ -112,7 +113,7 @@ void printLCD(float h, float t)
 void sendATcmd(char *cmd, unsigned int delay)
 {
   ESP8266.print(cmd);
-  Serial.print((char*)cmd);
+  // Serial.print((char*)cmd);
   unsigned long timeout = millis() + delay;
   while(millis() < timeout ) {} // NOP
 
@@ -128,23 +129,27 @@ void sendATcmd(char *cmd, unsigned int delay)
     response += "\r\n";
   }
 
-  Serial.print(response);
-//  if (PRINT_WiFi_SERIAL) { 
-//    Serial.print(response); 
-//  }
+  if (PRINT_WiFi_SERIAL) { 
+    Serial.print("\r\n"+response); 
+  }
 
   if (PRINT_WiFi_LCD) {
     String cmdstr((char*)cmd);
     cmdstr.trim();
 
-    String result = response;
-    result.replace(cmdstr, "");
-    result.replace("OK", "");
-    result = result.substring(0,16);
+    String result = response; 
     result.trim();
-    if (result.length() == 0) result = "OK";
-    // Serial.println("\r\nResult: '" + result + "'");
-
+    int len = result.length();
+    if (len == 0) {
+      result = "Fail";
+    } else {
+      result.replace(cmdstr, "");
+      result.replace("OK", "");
+      result = result.substring(0,16);
+      result.trim();
+      if (result.length() == 0) result = "OK";
+      // Serial.println("\r\nResult: '" + result + "'");
+    }
     LCD1602.clear();
     LCD1602.setCursor(0, 0); LCD1602.print(cmdstr);
     LCD1602.setCursor(0, 1); LCD1602.print(result);
@@ -164,18 +169,18 @@ void sendHTML(byte connID,char* msg)
   float t = DHT_SENSOR.readTemperature(); 
    
   String html = "";
-  html += "<html><head>";
-  html += "  <meta http-equiv=\"refresh\" content=\"10\">";
+  html += "<html><head>\n\r";
+  html += "  <meta http-equiv=\"refresh\" content=\"10\">\n\r";
   html += "  <title>From ESP-01</title>\n\r";
   html += "</head>\n\r";
-  html += "<body>";
+  html += "<body>\n\r";
   html += "  <p>ClientMsg: ";   html += msg; html += "</p>\n\r";
   html += "  <p>Humidity: ";    html += h;   html += "%</p>\n\r";
   html += "  <p>Temperature: "; html += t;   html += "*C</p>\n\r";
-  html += "</body>";
-  html += "</html>";
+  html += "</body>\n\r";
+  html += "</html>\n\r";
 
-  Serial.println(html);
+  Serial.println("\r\n"+html);
   sprintf(cipSend,"AT+CIPSEND=%d,%d\r\n",connID,html.length());
   sprintf(cipClose,"AT+CIPCLOSE=%d\r\n",connID);
 
@@ -212,7 +217,7 @@ void loop()
         msg += (char)ESP8266.read();
         delay(20);                          // the delay will let the message become more stable
       }
-      Serial.print(msg);
+      Serial.print("\r\n"+msg);
       sendHTML(connID, msg.c_str());        // send HTML message to client
       Serial.flush();
     }

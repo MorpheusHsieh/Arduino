@@ -1,5 +1,6 @@
 #include <SoftwareSerial.h>
-#define BAUD  9600
+#define BAUD_SERIAL   9600
+#define BAUD_ESP8266  115200
 
 /*  
  *  AT Command                說明
@@ -20,10 +21,10 @@
 SoftwareSerial mySerial(3,2);  // ESP-01S: Tx, Rx
 
 void setup() {
-  Serial.begin(BAUD);
+  Serial.begin(BAUD_SERIAL);
   Serial.println("Arduino...OK");
   
-  mySerial.begin(BAUD);
+  mySerial.begin(BAUD_ESP8266);
   Serial.println("ESP8266...OK");
 }
 
