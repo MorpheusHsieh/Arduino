@@ -77,20 +77,20 @@ void wifi_setting()
   
   sendATcmd("AT+RST\r\n",      5000);
   
-  sendATcmd("AT+CWMODE=3\r\n", 2000);
-  sendATcmd("AT+CWMODE?\r\n",  1000);
+  sendATcmd("AT+CWMODE=2\r\n", 2000);
+  // sendATcmd("AT+CWMODE?\r\n",  1000);
   
   char* cmd = "AT+CWSAP=\""AP_SSID"\",\""AP_PSWD"\",11,3\r\n";
   sendATcmd(cmd, 2000);
 
-  sendATcmd("AT+CWLAP\r\n", 3000); // Station mode only
+  // sendATcmd("AT+CWLAP\r\n", 3000); // Station mode only
   sendATcmd("AT+CIFSR\r\n", 1000);
   
   sendATcmd("AT+CIPMUX=1\r\n", 2000);
-  sendATcmd("AT+CIPMUX?\r\n",  1000);
+  // sendATcmd("AT+CIPMUX?\r\n",  1000);
 
   sendATcmd("AT+CIPSERVER=1,80\r\n", 2000);
-  sendATcmd("AT+CIPSTATUS=?\r\n",    1000);
+  // sendATcmd("AT+CIPSTATUS=?\r\n",    1000);
   
   Serial.println("\r\nServer styarted at port 80...");
 }
@@ -180,8 +180,8 @@ void sendHTML(byte connID,char* msg)
   html += "</head>\n\r";
   html += "<body>\n\r";
   html += "  <p>ClientMsg: ";   html += msg; html += "</p>\n\r";
-  html += "  <p>Humidity: ";    html += h;   html += "%</p>\n\r";
-  html += "  <p>Temperature: "; html += t;   html += "*C</p>\n\r";
+  html += "  <p>Humidity: ";    html += h;   html += " %</p>\n\r";
+  html += "  <p>Temperature: "; html += t;   html += " &deg;C</p>\n\r";
   html += "</body>\n\r";
   html += "</html>\n\r";
 
@@ -216,7 +216,7 @@ void loop()
     // Detect the client's request            
     if ( ESP8266.find("+IPD,") ) 
     {
-      String msg = "";
+      String msg = "+IPD";
       byte connID = ESP8266.read() - 48;    // client's connection ID
       while( ESP8266.available() ) {        // collect client's request from the web browser
         msg += (char)ESP8266.read();
