@@ -1,0 +1,137 @@
+使用 ESP-01S ATcmd 連線 HTTP Server 抓取網頁
+
+
+1.使用 RealTerm 連線 ESP-01S
+
+  (1).在 Display 頁面點選 Ansi。
+  
+  (2).在 Port 頁面選擇 Baud 和 Port 並按下 Change 按鈕。
+  
+  (3) 在 Send 頁面 勾選 EOL 中的 +CR, +LF, +CR, +LF 四個選項。
+  
+      並依序執行下列 AT command：
+ 
+ 
+2.AT command 
+
+  (1).測試 AT 命令是否可正常執行
+  
+      AT  
+      
+      OK  
+
+
+  (2).重新啟動 ESP-01S
+  
+      AT+RST
+
+
+      OK
+      WIFI DISCONNECT
+      
+      ets Jan  8 2013,rst cause:2, boot mode:(3,7)
+      
+      load 0x40100000, len 1856, room 16 
+      tail 0
+      chksum 0x63
+      load 0x3ffe8000, len 776, room 8 
+      tail 0
+      chksum 0x02
+      load 0x3ffe8310, len 552, room 8 
+      tail 0
+      chksum 0x79
+      csum 0x79
+      
+      2nd boot version : 1.5
+        SPI Speed      : 40MHz
+        SPI Mode       : DIO
+        SPI Flash Size & Map: 8Mbit(512KB+512KB)
+      jump to run user1 @ 1000
+      
+      斕???{鏤o<??{l{爐?d`斕r?駤?l`s? ?ll`{l?{l??cl攘s|8`?駥l{c檞o?gn??d?l??????lo??蓌cd鞁p?蓌cd8{lsd
+      Ai-Thinker Technology Co. Ltd.
+      
+      ready
+      WIFI CONNECTED
+      WIFI GOT IP
+      
+      
+  (3).取得韌體版本：
+
+      AT+GMR        
+      AT version:1.2.0.0(Jul  1 2016 20:04:45)
+      SDK version:1.5.4.1(39cb9a32) 
+      Ai-Thinker Technology Co. Ltd.
+      v1.5.4.1-a Nov 30 2017 15:54:29
+      OK 
+      
+  
+  (4).查詢目前工作模式：
+      
+      AT+CWMODE?
+      +CWMODE:1
+      
+      OK   
+
+      ESP8266 有三種工作模式，分別是：
+      1 -> Station (STA) 網卡模式
+      2 -> Access Point (AP) 基地台模式
+      3 -> BOTH (AP + STA) 網卡和基地台模式.
+      
+      注意, 執行 CWMODE 指令指定工作模式後，最好立即執行 CWRST 重啟, 以確認設定生效。
+        
+      
+  (5).設定工作模式：
+  
+      如果工作模式是 1，將其改為 2。
+  
+      AT+CWMODE=2
+
+      OK  
+
+      
+  (6).查詢連線模式：
+  
+      AT+CIPMUX?
+      +CIPMUX:0
+    
+      OK
+
+      指 ESP8266 與同基地台內其他 WiFi 裝置的連線模式，預設為單一連線模式 (+CIPMUX:0)。
+     
+      當 ESP8266 要當伺服器使用時, 必須設為多重連線模式 (+CIPMUX:1)。
+  
+
+  (7).設定連線模式：
+  
+      AT+CIPMUX=1
+      
+      OK
+  
+  
+  (8).將 ESP8266 設定為 TCP 伺服器：
+  
+      AT+CIPSERVER=1,80                                                               
+      
+      OK   
+  
+      此指令必須在開啟多重連線模式後才能啟用。
+      
+      指令格式為 AT+CIPSERVER=mode,[port]。
+      
+      mode = 1 時為開啟伺服器，必須指定埠號。
+      
+      mode = 0 時為關閉伺服器，不需指定埠號。
+      
+      在單一連線下開啟伺服器，會得到 ERROR 回應。
+      
+  
+  (9).查詢IP：
+  
+      AT+CIFSR
+      +CIFSR:STAIP,"192.168.4.2"
+      +CIFSR:STAMAC,"dc:4f:22:26:25:f0"
+
+      OK
+
+      從上述訊息可知此模組已經被指派 "192.168.4.2" 的 IP 了。
