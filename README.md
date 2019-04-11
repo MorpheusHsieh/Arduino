@@ -1,2 +1,2 @@
-# Arduino-Sketchs
+# Arduino
 Some Arduino projetcs

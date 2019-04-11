@@ -38,10 +38,6 @@ void setup()
   DHT_SENSOR.begin(); 
   Serial.println(mesg);
 
-  LCD1602.clear();
-  LCD1602.setCursor(0, 0); LCD1602.print(mesg);
-  delay(1000);
-
   wifi_setting();
 }
 
