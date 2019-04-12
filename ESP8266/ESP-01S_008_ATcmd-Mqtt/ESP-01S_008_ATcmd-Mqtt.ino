@@ -2,7 +2,6 @@
 #include "LiquidCrystal_I2C.h"
 #include "Wire.h"
 #include "SoftwareSerial.h"
-//#include <WiFiEsp.h>        // 只能在傳輸速率 9600 時執行
 #include <PubSubClient.h>
 
 /*
@@ -33,15 +32,13 @@
  * 
  */
 
-unsigned long CurrTimestamp = millis();
-
 /* ---  Serial setup  --- */
 #define BAUD_SERIAL       9600        // 序列埠傳輸速率設定為 9600 bps
 #define DELAY_MS          1000        // 系統預設延遲時間
 
 /* ---  LCD setup  */
 #define PRINT_LCD_INTERVAL 1000       // ms
-unsigned long PRINT_LCD_TIME = CurrTimestamp + PRINT_LCD_INTERVAL;
+unsigned long PRINT_LCD_LatestTime = millis();
 LiquidCrystal_I2C LCD1602(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 
 
@@ -90,7 +87,7 @@ void setup()
 
 void loop()
 {
-  if (millis() >= PRINT_LCD_TIME)
+  if (millis() - PRINT_LCD_LatestTime >= PRINT_LCD_INTERVAL)
   {
     float h = dht.readHumidity();
     float t = dht.readTemperature();
@@ -101,8 +98,7 @@ void loop()
     printSerial(h, t); printLCD(h, t);
   }
 
-  CurrTimestamp = millis();
-  PRINT_LCD_TIME = CurrTimestamp + PRINT_LCD_INTERVAL;
+  PRINT_LCD_LatestTime = millis();
 }
 
 void lcd_Setting()
