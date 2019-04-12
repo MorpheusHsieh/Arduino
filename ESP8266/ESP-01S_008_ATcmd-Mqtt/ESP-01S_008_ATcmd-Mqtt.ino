@@ -33,12 +33,17 @@
  * 
  */
 
+unsigned long CurrTimestamp = millis();
+
 /* ---  Serial setup  --- */
 #define BAUD_SERIAL       9600        // 序列埠傳輸速率設定為 9600 bps
 #define DELAY_MS          1000        // 系統預設延遲時間
 
 /* ---  LCD setup  */
+#define PRINT_LCD_INTERVAL 1000       // ms
+unsigned long PRINT_LCD_TIME = CurrTimestamp + PRINT_LCD_INTERVAL;
 LiquidCrystal_I2C LCD1602(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+
 
 /* ---  DHT  --- */
 #define DHTPIN  5
@@ -85,16 +90,19 @@ void setup()
 
 void loop()
 {
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
-  
-  if (isnan(h) || isnan(t)) { 
-    Serial.println("Failed to read from DHT sensor!");
-    return;
-  } 
-  printSerial(h, t); printLCD(h, t);
-  
-  delay(DELAY_MS);
+  if (millis() >= PRINT_LCD_TIME)
+  {
+    float h = dht.readHumidity();
+    float t = dht.readTemperature();
+    if (isnan(h) || isnan(t)) { 
+      Serial.println("Failed to read from DHT sensor!");
+      return;
+    } 
+    printSerial(h, t); printLCD(h, t);
+  }
+
+  CurrTimestamp = millis();
+  PRINT_LCD_TIME = CurrTimestamp + PRINT_LCD_INTERVAL;
 }
 
 void lcd_Setting()
@@ -119,56 +127,40 @@ void lcd_Setting()
 
 void wifi_Setting()
 {
+  Serial.println("\nESP8266 setup start...");
+
+  // Setup ESP8266 Baud rate
   ESP8266.begin(BAUD_ESP8266);
   
-  sendATcmd("AT+GMR\r\n",      1000);
-  sendATcmd("AT+RST\r\n",      5000);
+  // Restart module
+  sendATcmd("AT+RST\r\n", 5000);
+
+  // Setup WiFi mode: 1 is Station
   sendATcmd("AT+CWMODE=1\r\n", 2000);
-  char* at_cmd = "AT+CWJAP=\""WiFi_SSID"\",\""WiFi_PSWD"\"\r\n";
-  sendATcmd(at_cmd, 5000);
+
+  // Connect to WiFi
+  sendATcmd("AT+CWJAP=\""WiFi_SSID"\",\""WiFi_PSWD"\"\r\n", 3000);
+
+  // Get local IP address
   sendATcmd("AT+CIFSR\r\n",    1000);
+
+  Serial.println("ESP8266 setup finished.");
 }
 
 void sendATcmd(char *cmd, unsigned int delay)
 {
   ESP8266.print(cmd);
-  unsigned long timeout = millis() + delay;
-  while(millis() < timeout ) {} // NOP
 
   String response = "";
-  while (ESP8266.available()) {
-    char ch = ESP8266.read();
-    response += ch;
-  };
-  Serial.println();
-  Serial.print(response);
+  unsigned long timeout = millis() + delay;
+  while(ESP8266.available() || millis() < timeout ) {
+    while (ESP8266.available()) {
+      char ch = ESP8266.read();
+      response += ch;
+    }
+  }
+  Serial.println(response);
 }
-
-
-// For WiFiEsp.h
-//void wifi_Setting()
-//{
-//  ESP8266.begin(BAUD_ESP8266);
-//    
-//  // ESP module is initializing...
-//  WiFi.init(&ESP8266);
-//
-//  Serial.print("Connect to ");
-//  Serial.print(WiFi_SSID); Serial.println(" ...");
-//
-//  int i=0;
-//  do{
-//    WiFi_Status = WiFi.begin(WiFi_SSID, WiFi_PSWD);
-//    Serial.print(++i); Serial.print(" ");
-//    delay(500);
-//  } while (WiFi_Status != WL_CONNECTED);
-//  Serial.println();
-//    
-//  Serial.println("WiFi connection established!");
-//  Serial.print("IP Address: ");       
-//  Serial.println(WiFi.localIP());
-//}
-
 
 void printSerial(float h, float t)
 {
