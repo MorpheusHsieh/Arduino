@@ -66,7 +66,7 @@ void lcd_setting()
 
   // 輸出初始化文字
   LCD1602.setCursor(0, 0); // 設定游標位置在第一行行首
-  LCD1602.print("LCD is ready ...");
+  LCD1602.print("LCD...OK!");
   delay(1000);
 }
 
