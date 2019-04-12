@@ -172,7 +172,7 @@
         
         
         OK
-        > 
+        >
         Recv 7 bytes
         
         SEND OK

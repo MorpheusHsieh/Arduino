@@ -2,7 +2,6 @@
 #include "LiquidCrystal_I2C.h"
 #include "Wire.h"
 #include "SoftwareSerial.h"
-#include <PubSubClient.h>
 
 /*
  *  LCD Pins            Arduino Pin 
@@ -32,13 +31,13 @@
  * 
  */
 
+unsigned long CurrTimestamp = millis();
+
 /* ---  Serial setup  --- */
 #define BAUD_SERIAL       9600        // 序列埠傳輸速率設定為 9600 bps
 #define DELAY_MS          1000        // 系統預設延遲時間
 
 /* ---  LCD setup  */
-#define PRINT_LCD_INTERVAL 1000       // ms
-unsigned long PRINT_LCD_LatestTime = millis();
 LiquidCrystal_I2C LCD1602(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 
 
@@ -47,28 +46,27 @@ LiquidCrystal_I2C LCD1602(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
+unsigned long DHT_Interval = 2000;
+unsigned long DHT_LastTime = millis();
+
+
 /* ---  ESP8266 setup  --- */
 /*
  * Be aware that 115200 will not work with software serial.
  * With Arduino Uno must set the a lower baud rate, ex. 9600
  */
-#define BAUD_ESP8266      115200
-#define WiFi_SSID         "DADA9631"
-#define WiFi_PSWD         "22453975"
+#define BAUD_ESP8266  115200
+#define WiFi_SSID     "your wifi SSID"
+#define WiFi_PSWD     "your wifi PSWD"
 
-#define RXPIN     3                  // ESP8266 TX -> MCU D3
-#define TXPIN     4                  // ESP8266 RX -> MCU D4
-SoftwareSerial ESP8266(RXPIN, TXPIN);
-
-//int WiFi_Status = WL_IDLE_STATUS;           // WiFi Status for WiFiESP.h
+#define ESP_TX     3                  // ESP8266 TX -> MCU D3
+#define ESP_RX     4                  // ESP8266 RX -> MCU D4
+SoftwareSerial ESP8266(ESP_TX, ESP_RX);
 
 /* ---  MQTT setup --- */
-const char* MQTT_SERVER = "m16.cloudmqtt.com";
-const int   MQTT_PORT   = 11344;
-const char* MQTT_TOKEN  = "";
-
-const char* clientID = "80:7d:3a:72:5d:5f"; // MAC address as Client ID
-const char* topic = "Arduino/DHT11";        // MQTT topic
+char* HOST = "api.thingspeak.com";
+String WriteApiKey = "XBRHX7XEJW4D3RWQ";
+String ReadApiKey  = "NYTNGMDKZ7M63550";
 
 
 void setup() 
@@ -87,18 +85,20 @@ void setup()
 
 void loop()
 {
-  if (millis() - PRINT_LCD_LatestTime >= PRINT_LCD_INTERVAL)
+  if ( millis() - DHT_LastTime >= DHT_Interval)
   {
+    DHT_LastTime = millis();
+
     float h = dht.readHumidity();
     float t = dht.readTemperature();
     if (isnan(h) || isnan(t)) { 
       Serial.println("Failed to read from DHT sensor!");
       return;
-    } 
+    }  
     printSerial(h, t); printLCD(h, t);
-  }
 
-  PRINT_LCD_LatestTime = millis();
+    sendMqttMesg(h, t);
+  }
 }
 
 void lcd_Setting()
@@ -138,24 +138,49 @@ void wifi_Setting()
   sendATcmd("AT+CWJAP=\""WiFi_SSID"\",\""WiFi_PSWD"\"\r\n", 3000);
 
   // Get local IP address
-  sendATcmd("AT+CIFSR\r\n",    1000);
+  sendATcmd("AT+CIFSR\r\n", 1000);
 
   Serial.println("ESP8266 setup finished.");
 }
 
-void sendATcmd(char *cmd, unsigned int delay)
+void sendMqttMesg(float h, float t)
+{
+  String mesg = "GET /update?key=XBRHX7XEJW4D3RWQ";
+  mesg += "&field1=" + String(t);
+  mesg += "&field2=" + String(h);
+  mesg += "\r\n";
+  int mesg_len = mesg.length();
+
+  // ESP8266 connects to the server as a TCP client. 
+  char cipStart[128];
+  sprintf(cipStart, "AT+CIPSTART=\"TCP\",\"api.thingspeak.com\",80\r\n", HOST);
+  sendATcmd(cipStart, 1000);
+
+  // ESP8266 sends data to the server
+  char cipSend[16];
+  sprintf(cipSend, "AT+CIPSEND=%d\r\n", mesg_len);
+  sendATcmd(cipSend, 1000);
+  sendATcmd(mesg.c_str(), 1000);
+
+  // End the TCP connection. 
+}
+
+void sendATcmd(char *cmd, unsigned long delay)
 {
   ESP8266.print(cmd);
+//  Serial.println(cmd);
+
+  unsigned long curr_time = millis();
+  while ( millis() - curr_time < delay ) {}
 
   String response = "";
-  unsigned long timeout = millis() + delay;
-  while(ESP8266.available() || millis() < timeout ) {
-    while (ESP8266.available()) {
-      char ch = ESP8266.read();
-      response += ch;
-    }
+  while ( ESP8266.available() ) {
+    char ch = ESP8266.read();
+    response += ch;
   }
-  Serial.println(response);
+//  Serial.println(response);
+  Serial.print(response);
+  Serial.println();
 }
 
 void printSerial(float h, float t)
