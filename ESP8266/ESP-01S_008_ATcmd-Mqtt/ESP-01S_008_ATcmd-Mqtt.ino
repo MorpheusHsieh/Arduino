@@ -65,8 +65,8 @@ SoftwareSerial ESP8266(ESP_TX, ESP_RX);
 
 /* ---  MQTT setup --- */
 char* HOST = "api.thingspeak.com";
-String WriteApiKey = "XBRHX7XEJW4D3RWQ";
-String ReadApiKey  = "NYTNGMDKZ7M63550";
+String WriteApiKey = "0123456789ABCDEF";
+String ReadApiKey  = "0123456789ABCDEF";
 
 
 void setup() 

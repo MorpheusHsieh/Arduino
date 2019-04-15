@@ -51,8 +51,8 @@ DHT dht(DHTPIN, DHTTYPE);
  * With Arduino Uno must set the a lower baud rate, ex. 9600
  */
 #define BAUD_ESP8266      115200
-#define WiFi_SSID         "DADA9631"
-#define WiFi_PSWD         "22453975"
+#define WiFi_SSID         "xxxxxxxx"
+#define WiFi_PSWD         "xxxxxxxx"
 
 #define RXPIN     3                  // ESP8266 TX -> MCU D3
 #define TXPIN     4                  // ESP8266 RX -> MCU D4

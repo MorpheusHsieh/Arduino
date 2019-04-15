@@ -1,8 +1,8 @@
 #include <ESP8266WiFi.h>
 
 // Replace these with your WiFi network settings
-const char* WiFi_SSID = "DADA9631";
-const char* WiFi_PSWD = "22453975";
+const char* WiFi_SSID = "ESP8266";
+const char* WiFi_PSWD = "1234test";
 
 #define BAUD_ESP 115200
 

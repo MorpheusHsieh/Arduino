@@ -2,10 +2,9 @@
 #include <PubSubClient.h>
 #include <DHT.h>
  
-const char* ssid = "DADA9631";
-const char* pswd = "22453975";
+const char* ssid = "xxxxxxxx";
+const char* pswd = "xxxxxxxx";
 String WriteApiKey = "XBRHX7XEJW4D3RWQ";
-String ReadApiKey  = "NYTNGMDKZ7M63550";
 String GetFormatStr = "http://api.thingspeak.com/update?key=%s&field1=%d&field2=%d";
 
 /* ---  DHT  --- */
