@@ -15,6 +15,7 @@
  * GPIO4  = D2      LCD SCL
  * 3.3V             LCD VCC
  * GND              LCD GND
+ *
  */
 
 // DHT Setup
@@ -32,10 +33,6 @@ LiquidCrystal_I2C LCD1602(0x27, 16, 2);
 // WiFi connection
 const char* WiFi_SSID = "xxxx";
 const char* WiFi_PSWD = "xxxx";
-
-IPAddress StaticIP(192,168,100,128);
-IPAddress  Gateway(192,168,100,9);
-IPAddress  Netmask(255,255,255,0);
 
 // MQTT
 const char* mqttServer = "m16.cloudmqtt.com";
