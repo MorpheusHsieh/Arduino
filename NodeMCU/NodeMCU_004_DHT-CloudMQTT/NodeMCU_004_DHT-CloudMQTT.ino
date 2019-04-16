@@ -17,8 +17,6 @@
  * GND              LCD GND
  */
 
-unsigned long LastMillis = millis();
-
 // DHT Setup
 #define DHTPIN  0
 #define DHTTYPE DHT11
@@ -26,35 +24,43 @@ DHT dht(DHTPIN, DHTTYPE);
 
 boolean DHT2LCD = true;
 boolean DHT2COM = false;
-
 unsigned long DHT_Interval = 1000;
 
 // LCD Setup
 LiquidCrystal_I2C LCD1602(0x27, 16, 2);
 
 // WiFi connection
-const char* WiFi_SSID = "DADA9631";
-const char* WiFi_PSWD = "22453975";
+const char* WiFi_SSID = "xxxx";
+const char* WiFi_PSWD = "xxxx";
 
 IPAddress StaticIP(192,168,100,128);
 IPAddress  Gateway(192,168,100,9);
 IPAddress  Netmask(255,255,255,0);
 
 // MQTT
-const char* mqttServ = "m16.cloudmqtt.com";
-const int   mqttPort = 11344;
-const char* mqttUser = "rwgzuosm";
-const char* mqttPswd = "fLPRoVo0tma7";
-const char *clientID = "";
-const char* topicSub = "test/dht";
-const char* topicPub = "test/dht";
+const char* mqttServer = "m16.cloudmqtt.com";
+const int   mqttPort = 10794;
+const char* mqttUser = "xxxx";
+const char* mqttPswd = "xxxx";
+unsigned long MQTT_Interval = 60000;
 
+WiFiClient espClient;
+PubSubClient client(espClient);
 
 // Function declare
 void dht_Setting();
 void lcd_Setting();
-void connectWiFi();
 void readTempHumid();
+void connectWiFi();
+void connectMQTT();
+void callback(char*, byte*, unsigned int);
+void sendTempHuid();
+
+unsigned long SendDhtTime = millis();
+unsigned long SendMqttTime = SendDhtTime - MQTT_Interval;
+
+
+// ----------------------------------------------------------------------------
 
 void setup() 
 {
@@ -66,19 +72,52 @@ void setup()
   
   dht_Setting();  // Setup DHT
   lcd_Setting();  // Setup LCD
+  Serial.println();
 
   connectWiFi();
+
+  client.setServer(mqttServer, mqttPort);
+  client.setCallback(callback);
+  connectMQTT();
+  
   Serial.println();
 }
 
+// ----------------------------------------------------------------------------
+
 void loop() 
 {
+  client.loop();
+
+  // Show DHT information on LCD
   unsigned long currMillis = millis();
-  if (currMillis - LastMillis >= DHT_Interval) {
-    LastMillis = currMillis;
+
+  if (currMillis - SendDhtTime >= DHT_Interval) {
+    SendDhtTime = currMillis;
     readTempHumid();
   }
+
+  if (currMillis - SendMqttTime >= MQTT_Interval) {
+    SendMqttTime = currMillis;
+    sendTempHumid();
+  }
 }
+
+
+// ----------------------------------------------------------------------------
+
+String macToStr(const uint8_t* mac)
+{
+  String result;
+  for (int i = 0; i < 6; ++i) {
+    result += String(mac[i], 16);
+    if (i < 5)
+    result += ':';
+  }
+  return result;
+}
+
+// ----------------------------------------------------------------------------
 
 void dht_Setting()
 {
@@ -96,6 +135,8 @@ void dht_Setting()
 
   Serial.println(F("DHT... OK!"));
 }
+
+// ----------------------------------------------------------------------------
 
 void lcd_Setting()
 {
@@ -118,6 +159,8 @@ void lcd_Setting()
 
   Serial.println(F("LCD...OK!"));
 }
+
+// ----------------------------------------------------------------------------
 
 void readTempHumid()
 {
@@ -148,6 +191,8 @@ void readTempHumid()
   }
 }
 
+// ----------------------------------------------------------------------------
+
 void connectWiFi()
 {
   Serial.println("\r\nWiFi connecting ...");
@@ -164,6 +209,7 @@ void connectWiFi()
     if (timeout <= 0) break;
     Serial.print(".");
   }
+  Serial.println();
 
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("WiFi connect fail ...");
@@ -179,10 +225,68 @@ void connectWiFi()
   Serial.print("\r\nDynamic IP: "); 
   Serial.println(WiFi.localIP());
 
-  // Assign static IP address
-  WiFi.config(StaticIP, Gateway, Netmask);
+  /* 
+   * Assign static IP address to ESP8266, 
+   * but the MQTT connect will have failed. 
+   */
+  //  WiFi.config(StaticIP, Gateway, Netmask);
+  //  Serial.print("Static IP: ");
+  //  Serial.println(WiFi.localIP());
 
-  // Check static IP Address
-  Serial.print("Static IP: ");
-  Serial.println(WiFi.localIP());
+  String macStr = WiFi.macAddress();
+  Serial.print("MAC Address: "); Serial.println(macStr);
+}
+
+// ----------------------------------------------------------------------------
+
+void callback(char* topic, byte* payload, unsigned int length) 
+{
+  Serial.print("Message arrived in topic: ");
+  Serial.println(topic);
+ 
+  Serial.print("Message: ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+ 
+  Serial.println();
+  Serial.println("-----------------------");
+}
+
+// ----------------------------------------------------------------------------
+
+void connectMQTT()
+{
+  int i = 10;  // Maximum reconnect times
+  while (!client.connected() && (--i) >= 0)
+  {
+    Serial.print("Connecting to MQTT...");
+ 
+    if (client.connect("ESP8266Client", mqttUser, mqttPswd)) {
+      Serial.println("connected");  
+    } else {
+      Serial.printf(" failed with state %d, %d\r\n", client.state(), i);
+      delay(2000);
+    }
+  }
+
+  if (!client.connected()) {
+    Serial.println("MQTT connet failed!");
+    return;
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+void sendTempHumid()
+{
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+
+  String json = "{ \"Humi\": \"" + String(h) + " %\""
+              + ", \"Temp\": \"" + String(t) + " °C\" }";
+  Serial.println(json);
+  
+  client.publish("esp/test", (char*)json.c_str());
+  client.subscribe("esp/test");
 }
