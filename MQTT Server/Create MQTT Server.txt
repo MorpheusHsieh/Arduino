@@ -1,0 +1,43 @@
+2019.04.22    1.Install VirtualBox on Windows 7 (Host OS, HOS)
+              
+              2.Download Ubuntu 18.04 LTS Server 64 bit version (Guest OS, GOS)
+              
+              3.Setup Ubuntu 18.04 LTS and open SSH server
+              
+              4.The netwrok interface of GOS setup as bridge mode.
+              
+              5.Setup shared folder between Guest OS and Host OS.
+              
+                (1).Host Machine:
+                  
+                    A.Setup VirtualBox shared folder.
+                    
+                      a.Move mouse cursor to the target VM.
+                      
+                      b.Click mouse righ button and select 'Settings...' item.
+                      
+                      c.Select 'Shared Folders' item at the left side of '[VM name] - Settings' window 
+                      
+                      d.Add share (On the right side of window, the icon is '+' and folder)
+                      
+                        Select Host OS 'Folder Path', e.g. '...\SharedFolder'
+                        
+                        Key-in 'Folder Name', e.g. 'SharedFolder'
+                                                                       
+                        Enter VM 'Mount point', e.g. '/Users/[username]/SharedFolder'
+                        
+                        Check 'Auto-mount' and 'Make Permanent'
+                        
+                        Finally, press 'OK' button.
+                        
+              
+              
+              6.Create RSA key and copy as authorized_keys
+              
+                $ mkdir -p ~/.ssh
+                $ chomd 700 ~/.ssh
+                ...
+                $ ssh-copy-id [username]@[hostname]
+                  
+              7. 
+              
